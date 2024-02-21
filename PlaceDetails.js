@@ -1,12 +1,9 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { 
-  Button,
   Image, 
   View, 
   Text,
-  FlatList,
-  Pressable,
   StyleSheet,
   TouchableOpacity
 } from 'react-native';
@@ -21,15 +18,18 @@ import Animated, {
 import HeartIcon from './Assets2/SVG/HeartIcon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const PlaceDetails = ({ route }) => {
+const PlaceDetails = ({ route,userId }) => {
+
   const { placeId } = route.params;
   const [place, setPlace] = useState(null);
-  const [isFav, setIsFav] = useState(false);
+  const [Fav, setFav] = useState(true);
 
-  const [fontsLoaded, fontError] = useFonts({
-    'DancingScriptMid': require('./Assets2/Fonts/DancingScript-Medium.ttf'),
-    'DancingScriptBold': require('./Assets2/Fonts/DancingScript-Bold.ttf'),
-  });
+
+      const [fontsLoaded, fontError] = useFonts({
+        'DancingScriptBold': require('./Assets2/Fonts/DancingScript-Bold.ttf'),
+      });
+
+      const isLoading = !fontsLoaded || fontError;
 
   useEffect(() => {
     async function fetchPlace() {
@@ -42,7 +42,7 @@ const PlaceDetails = ({ route }) => {
           throw error;
         }
         if (data && data.length > 0) {
-          setPlace(data[0]); // Assuming there's only one place with the given ID
+          setPlace(data[0]);
         }
       } catch (error) {
         console.error('Error fetching place:', error.message);
@@ -52,23 +52,59 @@ const PlaceDetails = ({ route }) => {
     fetchPlace();
   }, [placeId]);
 
-  const setFavorited = async (fav) => {
 
+  useEffect(() => {
+    async function checkFav() {
+      try {
+        const { data, error } = await supabase
+          .from('favourites')
+          .select('placeid')
+          .eq('userid', userId)
+          .eq('placeid', placeId);
+        if (error) {
+          throw error;
+        }
+        if (data && data.length>0) {
+          setFav(true);
+        } else {setFav(false)}
+      } catch (error) {
+        console.error('Error identifying fav status:', error.message);
+      }
+    }
+
+    checkFav();
+  }, [userId,placeId]);
+
+  
+
+  const setFavorited = async (fav) => {
+      if(fav){
+        setFav(false);
         try {
           const { data,error } = await supabase
-          .from('places')
-          .update({ isfavourite: !fav })
-          .eq('id', placeId)
-          .select()
+          .from('favourites')
+          .delete()
+          .eq('placeid', placeId)
+          .eq('userid', userId)
           if (error) {
             throw error;
           }
-          if (data){
-            setPlace(data[0]);
+        } catch (error) {
+          console.error('Error updating info', error.message);
+        }
+      }else {
+        setFav(true);
+        try {
+          const { data,error } = await supabase
+          .from('favourites')
+          .insert({placeid : placeId , userid: userId})
+          if (error) {
+            throw error;
           }
         } catch (error) {
           console.error('Error updating info', error.message);
-        } 
+        }
+      }
   };
 
   const renderPlace = () => {
@@ -89,8 +125,8 @@ const PlaceDetails = ({ route }) => {
           
             <View style={styles.titlerow}>
               <Text style={styles.label}> {place.name}</Text>
-              <TouchableOpacity  onPress={() => setFavorited(place.isfavourite,place.id)}>
-                <HeartIcon isFav={place.isfavourite} />
+              <TouchableOpacity  onPress={() => setFavorited(Fav)}>
+                <HeartIcon Fav = {Fav} />
               </TouchableOpacity>
             </View>
             <Text style={styles.info}>{place.description}</Text>
@@ -100,6 +136,10 @@ const PlaceDetails = ({ route }) => {
     );
   };
 
+
+  if(isLoading){
+    <AppLoading/>
+  }
   return (
     <View style={styles.container}>
       {renderPlace()}
@@ -141,22 +181,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 28,
     fontFamily:'DancingScriptBold',
-    //color: '#c7f9cc',
-  },
-  addToFavorites: {
-    color: '#FF6347', // Tomato color for the add to favorites text
-    //fontSize: 24
+    textAlign:'center',
   },
   titlerow:{
     flexDirection:'row',
     alignItems:'center',
     justifyContent:'space-between',
-    width:280,
+    width:300,
     marginBottom:25
   },
   info: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 15,
+    width:270
   },
   iconBox:{
     backgroundColor:'#fff',

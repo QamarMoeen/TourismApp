@@ -21,12 +21,14 @@ const PlacesScreen = ({route , navigation}) => {
 
   const {cityId} = route.params;
   const [places, setPlaces] = useState([]);
+  
 
   const [fontsLoaded, fontError] = useFonts({
     'DancingScriptReg': require('../Assets2/Fonts/DancingScript-Regular.ttf'),
+    'DancingScriptMid': require('../Assets2/Fonts/DancingScript-Medium.ttf'),
   });
 
-  //setCityId(id.toString);
+  const isLoading = !fontsLoaded || fontError;
 
   useEffect(() => {
     async function fetchPlaces() {
@@ -62,7 +64,9 @@ const PlacesScreen = ({route , navigation}) => {
     );
   };
   
-
+  if(isLoading){
+    <AppLoading/>
+  }
   return (
     <View style={styles.container}>
       <Animated.View entering={FadeInLeft.delay(200).duration(300)} >
@@ -81,7 +85,7 @@ const PlacesScreen = ({route , navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#80ed99', // Light gray background
+    backgroundColor: '#80ed99',
     paddingHorizontal: 20,
     paddingTop: 30,
     paddingBottom:40
@@ -89,12 +93,12 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 35,
     padding: 10,
-    fontWeight: 'bold',
-    fontStyle:'italic'
+    fontStyle:'italic',
+    fontWeight:'500',
   },
   itemContainer: {
     marginBottom: 20,
-    backgroundColor: '#57cc99', // White background for place items
+    backgroundColor: '#57cc99',
     borderRadius: 12,
     elevation: 3,
     shadowColor: '#000',
@@ -107,12 +111,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    margin:5
   },
   label: {
     fontSize: 24,
     fontFamily:'DancingScriptReg',
     marginBottom: 8,
     color: '#333333', // Dark gray text color
+    textAlign:'center'
   },
 });
 

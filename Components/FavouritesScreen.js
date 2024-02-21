@@ -8,7 +8,6 @@ FlatList,
 Pressable,
 StyleSheet,
  } from 'react-native';
- import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../config/supabase';
 import {useFonts} from 'expo-font';
 import Animated, {
@@ -16,27 +15,48 @@ import Animated, {
   FadeInLeft,
   FadeInRight,
 } from "react-native-reanimated";
+import AppLoading from 'expo-app-loading';
 
 
-const FavouritesScreen = ({navigation}) => {
+const FavouritesScreen = ({navigation,userId}) => {
 
+
+  const [placeIds, setPlaceIds] = useState();
   const [places, setPlaces] = useState([]);
 
   const [fontsLoaded, fontError] = useFonts({
-    'DancingScriptMid': require('../Assets2/Fonts/DancingScript-Medium.ttf'),
     'DancingScriptSemiBold': require('../Assets2/Fonts/DancingScript-SemiBold.ttf'),
+    'DancingScriptBold': require('../Assets2/Fonts/DancingScript-Bold.ttf'),
   });
 
-  //setCityId(id.toString);
-  const holder = true;
+  const isLoading = !fontsLoaded || fontError;  
 
   useEffect(() => {
-    async function fetchFavouritePlaces() {
+    async function fetchPlaceIds() {
+      try {
+        const { data, error } = await supabase
+          .from('favourites')
+          .select('placeid')
+          .eq('userid', userId );
+        if (error) {
+          throw error;
+        }
+        if (data) {
+          let arr = data.map((item) => item.placeid)
+          setPlaceIds(arr);
+          fetchFavouritePlaces(arr);
+        } 
+      } catch (error) {
+        console.error('Error fetching favourites:', error.message);
+      }
+    }
+
+    async function fetchFavouritePlaces(ids) {
       try {
         const { data, error } = await supabase
           .from('places')
           .select('*')
-          .eq('isfavourite', holder );
+          .in('id', ids );
         if (error) {
           throw error;
         }
@@ -48,8 +68,10 @@ const FavouritesScreen = ({navigation}) => {
       }
     }
 
-    fetchFavouritePlaces();
-  }, [places]);
+    fetchPlaceIds();
+    
+  }, [placeIds]);
+
 
 
   const renderItem = ({ item }) => {
@@ -64,10 +86,10 @@ const FavouritesScreen = ({navigation}) => {
     );
   };
   
-
-  return (
-    <View>
-      
+  if(isLoading){
+    <AppLoading/>
+  }
+  return (    
       <View style={styles.container}>
       <Animated.View entering={FadeInLeft.delay(200).duration(300)} >
       <Text style={styles.header}>Favourite Places</Text>
@@ -79,12 +101,13 @@ const FavouritesScreen = ({navigation}) => {
         showsVerticalScrollIndicator={false}
         />
       </View>
-    </View>
+    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex:1,
     backgroundColor: '#d8f3dc', // Creamy background color
     paddingHorizontal: 16,
     paddingTop: 20,
@@ -93,8 +116,8 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 30,
     padding: 10,
-    fontWeight: 'bold',
-    fontStyle:'italic'
+    fontStyle:'italic',
+    fontWeight:'700',
   },
   itemContainer: {
     margin:5,

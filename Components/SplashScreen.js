@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 const SplashScreen = ({navigation}) => {
   //const { navigate } = useNavigation();
   setTimeout(() => {
-    navigation.replace("Tabs");
+    navigation.replace('App');
   }, 4000);
   return (
     <View style={styles.container}>

@@ -2,7 +2,7 @@ import * as React from "react"
 import Svg, { Path } from "react-native-svg"
 const SvgComponent = (props) => {
 
-    const isFav = props.isFav;
+    const Fav = props.Fav;
 
 return (
     
@@ -15,8 +15,8 @@ return (
     {...props}
   >
     <Path
-      fill={ isFav ? '#ef3f40' : "none"}
-      stroke={ isFav ? '#ef3f40' : "#323232"}
+      fill={ Fav ? '#ef3f40' : "none"}
+      stroke={ Fav ? '#ef3f40' : "#323232"}
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={32}

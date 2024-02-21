@@ -1,3 +1,6 @@
+import 'react-native-url-polyfill/auto'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from './config/supabase'
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -6,8 +9,10 @@ import PlacesScreen from './Components/PlacesScreen';
 import PlaceDetails from './PlaceDetails';
 import FavouritesScreen from './Components/FavouritesScreen';
 import SplashScreen from './Components/SplashScreen';
+import Auth from './Components/Auth'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Session } from '@supabase/supabase-js';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -18,22 +23,28 @@ const favIcon = require('./Assets2/Icons/favPlace.png');
 const favIcon_active = require('./Assets2/Icons/favPlaceFilled.png');
 
 
-const CitiesTab = () => (
+const CitiesTab = ({userId}) => (
   <Stack.Navigator screenOptions={{headerShown : false}}>
     <Stack.Screen name="Home" component={CitiesScreen} />
     <Stack.Screen name="Places" component={PlacesScreen}/>
-    <Stack.Screen name="PlaceInfo" component={PlaceDetails}/>
+    <Stack.Screen name="PlaceInfo">
+      {props => <PlaceDetails {...props} userId={userId} />}
+    </Stack.Screen>
 </Stack.Navigator>
 );
 
-const FavouritesTab = () => (
+const FavouritesTab = ({userId}) => (
   <Stack.Navigator screenOptions={{headerShown : false}}>
-    <Stack.Screen name="Favourites" component={FavouritesScreen} />
-    <Stack.Screen name="PlaceInfo" component={PlaceDetails}/>
+    <Stack.Screen name="Favourites">
+      {props => <FavouritesScreen {...props} userId={userId} />}
+    </Stack.Screen>
+    <Stack.Screen name="PlaceInfo">
+      {props => <PlaceDetails {...props} userId={userId} />}
+    </Stack.Screen>
 </Stack.Navigator>
 );
 
-const Tabs = () => (
+const Tabs = ({userId}) => (
   <Tab.Navigator 
   screenOptions={({ route }) => ({
     headerShown: false,
@@ -60,8 +71,12 @@ const Tabs = () => (
     }
   })}
   >
-          <Tab.Screen name='Cities' component={CitiesTab}/>
-          <Tab.Screen name='Favourites' component={FavouritesTab}/>
+          <Tab.Screen name='Cities'>
+            {props => <CitiesTab {...props} userId={userId} />}
+          </Tab.Screen>
+          <Tab.Screen name="Favourites">
+            {props => <FavouritesTab {...props} userId={userId} />}
+          </Tab.Screen>
   </Tab.Navigator>
 );
 
@@ -69,14 +84,42 @@ const Tabs = () => (
 
 export default function App() {
 
+  const [sesion, setSesion] = useState(null)
+  const [userId, setUserId] = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSesion(session)
+      setUserId(sesion?.user.id);
+    })
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSesion(session)
+      setUserId(sesion?.user.id);
+    })
+
+    
+  }, [])
+
+  const isLoading = !userId;
+ 
+  if (isLoading) {
+  }
   return (
     
     <View style={styles.container}>
       <View style={{flex:1,backgroundColor:'blue',width:'100%'}}>
       <NavigationContainer >
         <Stack.Navigator initialRouteName='Splash' screenOptions={{headerShown : false}}>
-          <Stack.Screen name='Splash' component={SplashScreen}/>
-          <Stack.Screen name='Tabs' component={Tabs}/>
+         <Stack.Screen name='Splash' component={SplashScreen}/>
+          { sesion && sesion.user ? (
+          <Stack.Screen name='App'> 
+            {props => <Tabs {...props} userId={sesion?.user.id} />}
+          </Stack.Screen>
+          ) : (
+          <Stack.Screen name='App' component={Auth}/>
+          )}
+          
         </Stack.Navigator>
       <StatusBar style="auto" />
       </NavigationContainer>
@@ -88,7 +131,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FDFDFD', // Light grayish background
+    backgroundColor: '#FDFDFD',
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   Pressable,
+  Button,
 } from 'react-native';
 import { supabase } from '../config/supabase';
 import Animated, {
@@ -22,6 +23,8 @@ const CitiesScreen = ({ navigation }) => {
     'DancingScriptMid': require('../Assets2/Fonts/DancingScript-Medium.ttf'),
     'DancingScriptBold': require('../Assets2/Fonts/DancingScript-Bold.ttf'),
   });
+
+  const isLoading = !fontsLoaded || fontError;
 
   useEffect(() => {
     async function fetchCities() {
@@ -55,11 +58,17 @@ const CitiesScreen = ({ navigation }) => {
      
     );
   };
-  if(!fontsLoaded){
+
+  const signOut = () => {
+    supabase.auth.signOut()
+  }
+  
+  if(isLoading){
     <AppLoading/>
   }
   return (
     <View style={styles.container}>
+      <Button title="Sign Out" onPress={signOut} />
       <Animated.View entering={FadeInRight.delay(200).duration(400)} >
       <Text style={styles.header}>CITIES</Text>
       </Animated.View>
@@ -76,7 +85,7 @@ const CitiesScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#c7f9cc', // Light beige background
+    backgroundColor: '#c7f9cc',
     paddingHorizontal: 20,
     paddingTop: 20,
     justifyContent: 'center',
@@ -93,7 +102,7 @@ const styles = StyleSheet.create({
     flex:1,
     margin:5,
     marginBottom: 20,
-    backgroundColor: '#80ed99', // Peach background for city items
+    backgroundColor: '#80ed99',
     padding: 7,
     borderRadius: 15,
     height: 100,
@@ -106,9 +115,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.27,
     shadowRadius: 4.65,
-
     elevation: 6,
-
   },
   label: {
     fontSize: 50,
